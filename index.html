@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Liga Minaçu Tênis</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root{
+  --green:#00C853;--green-d:#009c3f;--green-g:rgba(0,200,83,.18);
+  --gold:#FFD600;--red:#FF3D3D;--blue:#4A9EFF;
+  --bg:#080C0A;--bg2:#0D1410;--bg3:#121A15;--bg4:#1A2420;--card:#111915;
+  --border:rgba(0,200,83,.12);--border2:rgba(0,200,83,.25);
+  --text:#E8F5EE;--text2:#8BA898;--text3:#4A6158;
+  --fd:'Bebas Neue',sans-serif;--fb:'Barlow',sans-serif;--fc:'Barlow Condensed',sans-serif;
+  --r:10px;--rs:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+#login-screen::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(0,200,83,.07) 0%,transparent 70%);animation:pulse 4s ease-in-out infinite;pointer-events:none}
+@keyframes pulse{0%,100%{opacity:.5;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.1)}}
+.lcard{position:relative;z-index:1;width:360px;max-width:94vw;background:var(--card);border:.5px solid var(--border2);border-radius:20px;padding:40px 32px;box-shadow:0 0 80px rgba(0,200,83,.06),0 40px 80px rgba(0,0,0,.5)}
+.llogo{text-align:center;margin-bottom:28px}
+.llogo h1{font-family:var(--fd);font-size:40px;letter-spacing:2px;background:linear-gradient(135deg,var(--green),#80FFB0);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.llogo p{font-size:11px;color:var(--text2);letter-spacing:.15em;text-transform:uppercase;margin-top:4px}
+.lerr{background:rgba(255,61,61,.1);border:.5px solid rgba(255,61,61,.3);border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:none}
+.fg{margin-bottom:14px}
+.fl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:5px;display:block}
+.fi{width:100%;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--rs);padding:11px 14px;font-family:var(--fb);font-size:14px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+.fi:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-g)}
+.fi-pw{position:relative}
+.fi-pw .fi{padding-right:44px}
+.eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;display:flex;transition:color .2s}
+.eye:hover{color:var(--green)}
+.btn-p{width:100%;padding:12px;background:var(--green);border:none;border-radius:var(--rs);color:#000;font-family:var(--fc);font-size:15px;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn-p:hover{background:#00E860;transform:translateY(-1px);box-shadow:0 8px 24px var(--green-g)}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh}
+.topnav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,12,10,.96);backdrop-filter:blur(12px);border-bottom:.5px solid var(--border);display:flex;align-items:center;padding:0 16px;height:52px;gap:8px}
+.nav-logo{font-family:var(--fd);font-size:20px;letter-spacing:2px;background:linear-gradient(135deg,var(--green),#80FFB0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-right:auto}
+.nav-av{width:32px;height:32px;border-radius:50%;background:var(--green);color:#000;font-family:var(--fc);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--green-d)}
+.admin-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(255,214,0,.1);color:var(--gold);border:.5px solid rgba(255,214,0,.3);font-family:var(--fc);font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 8px;border-radius:20px;text-transform:uppercase}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:500;background:rgba(8,12,10,.97);backdrop-filter:blur(12px);border-top:.5px solid var(--border);display:flex;align-items:stretch;height:60px}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--text3);transition:color .2s;font-size:9px;font-family:var(--fc);letter-spacing:.05em;text-transform:uppercase;border:none;background:none;padding:6px 2px}
+.ni i{font-size:19px}
+.ni.active{color:var(--green)}
+.ni.active i{filter:drop-shadow(0 0 5px var(--green))}
+
+/* SECTION NAV (sub-tabs dentro de página) */
+.snav{display:flex;background:var(--bg3);border-radius:var(--rs);padding:3px;gap:3px;margin-bottom:16px;overflow-x:auto}
+.sn{flex:1;min-width:0;padding:7px 6px;font-family:var(--fc);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border:none;cursor:pointer;border-radius:5px;background:transparent;color:var(--text3);transition:all .2s;white-space:nowrap}
+.sn.active{background:var(--green);color:#000}
+
+/* PAGES */
+.page{display:none;padding:62px 14px 72px;min-height:100vh}
+.page.active{display:block}
+.pi{max-width:700px;margin:0 auto}
+.ptitle{font-family:var(--fd);font-size:32px;letter-spacing:2px;color:var(--text);line-height:1}
+.psub{font-size:12px;color:var(--text2);margin-top:3px}
+
+/* CARDS */
+.card{background:var(--card);border:.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.card:hover{border-color:var(--border2)}
+.sl{font-family:var(--fc);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sl::after{content:'';flex:1;height:.5px;background:var(--border)}
+
+/* FORM */
+.fr{margin-bottom:14px}
+.form-label{font-size:11px;color:var(--text2);margin-bottom:5px;display:block;letter-spacing:.05em}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--rs);padding:10px 13px;font-family:var(--fb);font-size:14px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-g)}
+.form-select option{background:var(--bg3)}
+.form-textarea{resize:vertical;min-height:72px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:var(--rs);font-family:var(--fc);font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;border:.5px solid;transition:all .15s;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px}
+.btn-g{background:var(--green);color:#000;border-color:var(--green)}
+.btn-g:hover{background:#00E860}
+.btn-gh{background:transparent;color:var(--text2);border-color:var(--border2)}
+.btn-gh:hover{border-color:var(--green);color:var(--green)}
+.btn-r{background:rgba(255,61,61,.1);color:var(--red);border-color:rgba(255,61,61,.3)}
+.btn-r:hover{background:rgba(255,61,61,.2)}
+.btn-full{width:100%;padding:12px;justify-content:center}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.brow{display:flex;gap:8px;flex-wrap:wrap}
+
+/* RANKING TABLE */
+.rtable{width:100%;border-collapse:collapse;font-size:13px}
+.rtable th{font-family:var(--fc);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:8px 8px;text-align:center;border-bottom:.5px solid var(--border);white-space:nowrap;cursor:pointer}
+.rtable th:first-child,.rtable th:nth-child(3){text-align:left}
+.rtable th:hover{color:var(--green)}
+.rtable td{padding:10px 8px;text-align:center;border-bottom:.5px solid var(--border);vertical-align:middle}
+.rtable td:first-child,.rtable td:nth-child(3){text-align:left}
+.rtable tr:last-child td{border-bottom:none}
+.rtable tr:hover td{background:rgba(0,200,83,.03)}
+.rpos{font-family:var(--fd);font-size:18px;color:var(--text3);min-width:28px;display:inline-block;text-align:center}
+.rpos.p1{color:#FFD700;filter:drop-shadow(0 0 5px #FFD70050)}
+.rpos.p2{color:#C0C0C0}
+.rpos.p3{color:#CD7F32}
+.rpos.p4{color:var(--green)}
+.rpos.pb{color:var(--red)}
+.pts{font-family:var(--fc);font-weight:700;font-size:15px;color:var(--green)}
+.rbadge{display:inline-block;font-family:var(--fc);font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700}
+.rbg{background:rgba(0,200,83,.15);color:var(--green);border:.5px solid var(--green-d)}
+.rbb{background:rgba(255,61,61,.12);color:var(--red);border:.5px solid rgba(255,61,61,.3)}
+.rbm{background:var(--bg4);color:var(--text2);border:.5px solid var(--border)}
+
+/* MATCH CARD */
+.mc{background:var(--card);border:.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.mplayers{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mp{flex:1}
+.mpn{font-family:var(--fc);font-size:15px;font-weight:700}
+.mpc{font-size:11px;color:var(--text2)}
+.mvs{font-family:var(--fd);font-size:16px;color:var(--text3);padding:0 4px}
+.mstatus{display:inline-flex;align-items:center;gap:4px;font-family:var(--fc);font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.sp{background:rgba(255,214,0,.12);color:var(--gold);border:.5px solid rgba(255,214,0,.3)}
+.sc{background:rgba(0,200,83,.12);color:var(--green);border:.5px solid var(--green-d)}
+.sf{background:var(--bg4);color:var(--text2);border:.5px solid var(--border)}
+
+/* SCORE */
+.set-box{background:var(--bg3);border:.5px solid var(--border);border-radius:var(--rs);padding:7px 10px;text-align:center;min-width:56px}
+.set-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.set-score{font-family:var(--fd);font-size:20px;display:flex;justify-content:center;gap:4px;align-items:center}
+.sw{color:var(--green)}.sl2{color:var(--text3)}
+.score-in{width:52px;text-align:center;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--rs);padding:7px;font-family:var(--fd);font-size:20px;color:var(--text);outline:none}
+.score-in:focus{border-color:var(--green)}
+
+/* DASHBOARD STATS */
+.dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.dstat{background:var(--bg4);border:.5px solid var(--border);border-radius:var(--r);padding:12px 8px;text-align:center}
+.dstat-n{font-family:var(--fd);font-size:28px;background:linear-gradient(135deg,var(--green),#80FFB0);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.dstat-l{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+
+/* PROGRESS BAR */
+.pbar-wrap{margin-bottom:12px}
+.pbar-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.pbar-label{font-size:11px;color:var(--text2);font-family:var(--fc);letter-spacing:.06em;text-transform:uppercase}
+.pbar-pct{font-size:12px;font-family:var(--fd)}
+.pbar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.pbar-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* TOP4 MINI */
+.top4-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg4);border:.5px solid var(--border);border-radius:var(--rs);margin-bottom:6px}
+.top4-medal{font-size:20px;min-width:28px;text-align:center}
+.top4-name{font-family:var(--fc);font-size:14px;font-weight:700;flex:1}
+.top4-pts{font-family:var(--fc);font-weight:700;font-size:14px;color:var(--green)}
+
+/* RECENT MATCH */
+.rm-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:.5px solid var(--border)}
+.rm-row:last-child{border-bottom:none}
+.rm-name{font-size:12px;font-family:var(--fc);flex:1}
+.rm-score{font-family:var(--fd);font-size:13px;color:var(--text2);text-align:center;min-width:60px}
+.rm-win{color:var(--green)}
+
+/* TOAST */
+.toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-family:var(--fc);font-size:13px;font-weight:700;letter-spacing:.05em;padding:9px 22px;border-radius:30px;z-index:600;animation:tIn .3s ease,tOut .3s ease 2.7s forwards;white-space:nowrap;pointer-events:none}
+.toast.err{background:var(--red);color:#fff}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes tOut{from{opacity:1}to{opacity:0}}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 16px;color:var(--text3)}
+.empty i{font-size:40px;margin-bottom:12px;opacity:.25;display:block}
+.empty p{font-size:13px;line-height:1.6}
+
+/* INSCRITO BADGE */
+.ins-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(0,200,83,.12);color:var(--green);border:.5px solid var(--green-d);font-family:var(--fc);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+
+/* TABLE OVERFLOW */
+.tscroll{overflow-x:auto;border-radius:var(--r);border:.5px solid var(--border)}
+.tscroll table{min-width:520px}
+
+/* ZONA BADGE */
+.zona-top{background:rgba(0,200,83,.15);color:var(--green);border:.5px solid var(--green-d)}
+.zona-bot{background:rgba(255,61,61,.12);color:var(--red);border:.5px solid rgba(255,61,61,.3)}
+.zona-mid{background:var(--bg4);color:var(--text2);border:.5px solid var(--border)}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-screen">
+  <div class="lcard">
+    <div class="llogo">
+      <div style="font-size:38px;margin-bottom:6px;">🎾</div>
+      <h1>LIGA MINAÇU</h1>
+      <p>Tênis · Sistema Oficial</p>
+    </div>
+    <div class="lerr" id="lerr"></div>
+    <div class="fg"><label class="fl">E-mail</label><input type="email" class="fi" id="lemail" placeholder="seu@email.com" autocomplete="email"></div>
+    <div class="fg"><label class="fl">Senha</label>
+      <div class="fi-pw">
+        <input type="password" class="fi" id="lpass" placeholder="••••••••" autocomplete="current-password">
+        <button class="eye" onclick="togglePw('lpass',this)"><i class="fa-regular fa-eye" id="lpass-eye"></i></button>
+      </div>
+    </div>
+    <button class="btn-p" id="lbtn" onclick="doLogin()">Entrar</button>
+    <p style="text-align:center;font-size:11px;color:var(--text3);margin-top:14px;">Acesso exclusivo para atletas cadastrados</p>
+    <p style="text-align:center;font-size:10px;color:var(--text3);margin-top:20px;letter-spacing:0.1em;opacity:0.5;">by Jaime Pessoa</p>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app">
+  <nav class="topnav">
+    <span class="nav-logo">🎾 LIGA MINAÇU</span>
+    <span id="nav-admin-badge"></span>
+    <div class="nav-av" id="nav-av" onclick="showPage('perfil')">?</div>
+  </nav>
+
+  <!-- ════ PÁGINA: CONSULTAS ════ -->
+  <div class="page active" id="page-consultas">
+    <div class="pi">
+      <div style="margin-bottom:16px;"><div class="ptitle">CONSULTAS</div><div class="psub">Dashboard, Ranking e Resultados</div></div>
+      <div class="snav">
+        <button class="sn active" onclick="showSub('consultas','dashboard',this)">Dashboard</button>
+        <button class="sn" onclick="showSub('consultas','ranking-ev',this)">Ranking do Evento</button>
+        <button class="sn" onclick="showSub('consultas','ranking-geral',this)">Ranking Geral</button>
+        <button class="sn" onclick="showSub('consultas','resultados',this)">Resultados</button>
+      </div>
+      <!-- Dashboard sub -->
+      <div id="sub-consultas-dashboard">
+        <div class="fr"><label class="form-label">Selecionar Evento</label>
+          <select class="form-select" id="dash-ev-sel" onchange="loadDashboard()"><option value="">— selecione —</option></select>
+        </div>
+        <div id="dash-content"><div class="empty"><i class="fa-solid fa-chart-line"></i><p>Selecione um evento para ver o dashboard</p></div></div>
+      </div>
+      <!-- Ranking Evento sub -->
+      <div id="sub-consultas-ranking-ev" style="display:none">
+        <div class="fr"><label class="form-label">Selecionar Evento</label>
+          <select class="form-select" id="rev-sel" onchange="loadRankingEvento()"><option value="">— selecione —</option></select>
+        </div>
+        <div id="rev-content"><div class="empty"><i class="fa-solid fa-ranking-star"></i><p>Selecione um evento para ver o ranking</p></div></div>
+      </div>
+      <!-- Ranking Geral sub -->
+      <div id="sub-consultas-ranking-geral" style="display:none">
+        <div style="margin-bottom:12px;"><label class="form-label">Selecionar Eventos (multi)</label>
+          <div id="rg-eventos-check" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--rs);"></div>
+        </div>
+        <button class="btn btn-g" onclick="loadRankingGeral()" style="margin-bottom:16px;"><i class="fa-solid fa-magnifying-glass"></i> Gerar Ranking Geral</button>
+        <div id="rg-content"><div class="empty"><i class="fa-solid fa-globe"></i><p>Selecione os eventos e clique em Gerar</p></div></div>
+      </div>
+      <!-- Resultados sub -->
+      <div id="sub-consultas-resultados" style="display:none">
+        <div class="fr"><label class="form-label">Selecionar Evento</label>
+          <select class="form-select" id="res-ev-sel" onchange="loadResultados()"><option value="">— selecione —</option></select>
+        </div>
+        <div id="res-content"><div class="empty"><i class="fa-solid fa-list-check"></i><p>Selecione um evento para ver os resultados</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PÁGINA: EVOLUÇÃO ════ -->
+  <div class="page" id="page-evolucao">
+    <div class="pi">
+      <div style="margin-bottom:16px;"><div class="ptitle">EVOLUÇÃO</div><div class="psub">Inscrições, Jogos e Placar</div></div>
+      <div class="snav">
+        <button class="sn active" onclick="showSub('evolucao','inscricao',this)">Inscrição</button>
+        <button class="sn" onclick="showSub('evolucao','jogos',this)">Jogos</button>
+        <button class="sn" onclick="showSub('evolucao','placar',this)">Placar</button>
+      </div>
+      <!-- Inscrição -->
+      <div id="sub-evolucao-inscricao">
+        <div id="inscricao-list"></div>
+      </div>
+      <!-- Jogos -->
+      <div id="sub-evolucao-jogos" style="display:none">
+        <div class="fr"><label class="form-label">Selecionar Evento</label>
+          <select class="form-select" id="jg-ev-sel" onchange="onJogosEventoChange()"><option value="">— selecione —</option></select>
+        </div>
+        <div id="jg-area" style="display:none">
+          <div id="jg-ev-info" style="margin-bottom:12px;"></div>
+          <!-- Novo jogo -->
+          <div style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:16px;">
+            <div class="sl">Nova Partida</div>
+            <div class="fr"><label class="form-label">1º Atleta</label>
+              <select class="form-select" id="j-a1" onchange="onA1Change()"><option value="">— selecione —</option></select>
+            </div>
+            <div class="fr"><label class="form-label">2º Atleta</label>
+              <select class="form-select" id="j-a2"><option value="">— selecione o 1º atleta primeiro —</option></select>
+            </div>
+            <div class="fg2">
+              <div class="fr"><label class="form-label">Data proposta</label><input type="date" class="form-input" id="j-data"></div>
+              <div class="fr"><label class="form-label">Local</label><input type="text" class="form-input" id="j-local" placeholder="Quadra 2"></div>
+            </div>
+            <button class="btn btn-g btn-full" onclick="criarJogo()"><i class="fa-solid fa-plus"></i> Solicitar Jogo</button>
+          </div>
+          <!-- Filtro jogos -->
+          <div class="snav" id="jg-tabs">
+            <button class="sn active" onclick="filterJogos('pendente',this)">Pendentes</button>
+            <button class="sn" onclick="filterJogos('confirmado',this)">Confirmados</button>
+            <button class="sn" onclick="filterJogos('todos',this)">Todos</button>
+          </div>
+          <div id="jg-list"></div>
+        </div>
+        <div id="jg-empty" class="empty"><i class="fa-solid fa-calendar-check"></i><p>Selecione um evento para ver os jogos</p></div>
+      </div>
+      <!-- Placar -->
+      <div id="sub-evolucao-placar" style="display:none">
+        <div class="fr"><label class="form-label">Selecionar Evento</label>
+          <select class="form-select" id="pl-ev-sel" onchange="loadPlacar()"><option value="">— selecione —</option></select>
+        </div>
+        <div id="pl-list"><div class="empty"><i class="fa-solid fa-table-tennis-paddle-ball"></i><p>Selecione um evento para lançar placares</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PÁGINA: CADASTROS ════ -->
+  <div class="page" id="page-cadastros">
+    <div class="pi">
+      <div style="margin-bottom:16px;"><div class="ptitle" id="cad-title">EVENTOS</div><div class="psub" id="cad-sub">Consulte eventos e critérios</div></div>
+      <div class="snav" id="cad-snav">
+        <!-- tabs preenchidas dinamicamente conforme perfil -->
+      </div>
+
+      <!-- ATLETAS (só admin) -->
+      <div id="sub-cadastros-atletas" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div class="form-label" id="atl-count">Carregando...</div>
+          <button class="btn btn-g" onclick="toggleForm('form-atleta')"><i class="fa-solid fa-user-plus"></i> Cadastrar</button>
+        </div>
+        <div id="form-atleta" style="display:none;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:16px;">
+          <div class="sl">Novo Atleta</div>
+          <div class="fr"><label class="form-label">Nome completo</label><input type="text" class="form-input" id="a-nome" placeholder="Nome do atleta"></div>
+          <div class="fg2">
+            <div class="fr"><label class="form-label">Idade</label><input type="number" class="form-input" id="a-idade" placeholder="Ex: 32" min="5" max="90"></div>
+            <div class="fr"><label class="form-label">Sexo</label><select class="form-select" id="a-sexo"><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+          </div>
+          <div class="fg2">
+            <div class="fr"><label class="form-label">Classe (CBT)</label>
+              <select class="form-select" id="a-classe">
+                <option value="1ª Classe">1ª Classe (Elite)</option>
+                <option value="2ª Classe">2ª Classe</option>
+                <option value="3ª Classe">3ª Classe</option>
+                <option value="4ª Classe">4ª Classe</option>
+                <option value="5ª Classe">5ª Classe</option>
+                <option value="Principiante">Principiante</option>
+              </select>
+            </div>
+            <div class="fr"><label class="form-label">Categoria Idade</label>
+              <select class="form-select" id="a-cat">
+                <option value="Sub-12">Sub-12</option><option value="Sub-14">Sub-14</option>
+                <option value="Sub-16">Sub-16</option><option value="Sub-18">Sub-18</option>
+                <option value="Adulto" selected>Adulto</option>
+                <option value="40+">40+</option><option value="50+">50+</option><option value="60+">60+</option>
+              </select>
+            </div>
+          </div>
+          <div class="fr"><label class="form-label">Cidade</label><input type="text" class="form-input" id="a-cidade" placeholder="Ex: Minaçu - GO"></div>
+          <div class="fr"><label class="form-label">WhatsApp</label><input type="text" class="form-input" id="a-wpp" placeholder="(62) 99999-9999"></div>
+          <div class="fr"><label class="form-label">E-mail (acesso)</label><input type="email" class="form-input" id="a-email" placeholder="atleta@email.com"></div>
+          <div class="fr"><label class="form-label">Senha inicial</label>
+            <div class="fi-pw"><input type="password" class="fi form-input" id="a-pass" placeholder="Mín. 6 caracteres"><button class="eye" onclick="togglePw('a-pass',this)"><i class="fa-regular fa-eye"></i></button></div>
+          </div>
+          <div class="fr"><label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="a-admin"> Acesso de administrador</label></div>
+          <div class="brow"><button class="btn btn-g btn-full" onclick="criarAtleta()"><i class="fa-solid fa-check"></i> Cadastrar Atleta</button><button class="btn btn-gh" onclick="toggleForm('form-atleta')">Cancelar</button></div>
+        </div>
+        <div id="atletas-list"></div>
+      </div>
+
+      <!-- EVENTOS (todos veem, só admin cria) -->
+      <div id="sub-cadastros-eventos">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div class="form-label" id="ev-count">Carregando...</div>
+          <!-- Botão só aparece para admin via JS -->
+          <button class="btn btn-g" id="btn-novo-evento" onclick="toggleForm('form-evento')" style="display:none;"><i class="fa-solid fa-trophy"></i> Novo Evento</button>
+        </div>
+        <div id="form-evento" style="display:none;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:16px;">
+          <div class="sl">Novo Evento</div>
+          <div class="fr"><label class="form-label">Título</label><input type="text" class="form-input" id="e-titulo" placeholder="Ex: Ranking Minaçu 1ª Etapa"></div>
+          <div class="fg2">
+            <div class="fr"><label class="form-label">Início</label><input type="date" class="form-input" id="e-inicio"></div>
+            <div class="fr"><label class="form-label">Fim</label><input type="date" class="form-input" id="e-fim"></div>
+          </div>
+          <div class="fr"><label class="form-label">Formato</label>
+            <select class="form-select" id="e-formato">
+              <option value="round-robin">Round Robin (todos contra todos)</option>
+              <option value="eliminatorio">Eliminatório simples</option>
+              <option value="grupos">Fase de grupos + eliminatório</option>
+            </select>
+          </div>
+          <div class="fg2">
+            <div class="fr"><label class="form-label">Pts/Vitória</label><input type="number" class="form-input" id="e-ptv" value="3" min="1"></div>
+            <div class="fr"><label class="form-label">Pts/Derrota</label><input type="number" class="form-input" id="e-ptd" value="1" min="0"></div>
+          </div>
+          <div class="fr"><label class="form-label">Regras e observações</label><textarea class="form-textarea" id="e-regras" placeholder="Descreva as regras do evento..."></textarea></div>
+          <div class="fr"><label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="e-ativo" checked> Definir como evento ativo no ranking</label></div>
+          <div class="brow"><button class="btn btn-g btn-full" onclick="criarEvento()"><i class="fa-solid fa-check"></i> Criar Evento</button><button class="btn btn-gh" onclick="toggleForm('form-evento')">Cancelar</button></div>
+        </div>
+        <div id="eventos-list"></div>
+      </div>
+
+      <!-- CRITÉRIOS (todos veem, só admin edita) -->
+      <div id="sub-cadastros-criterios" style="display:none">
+        <div class="fr"><label class="form-label">Selecionar Evento</label>
+          <select class="form-select" id="crit-ev-sel" onchange="loadCriterios()"><option value="">— selecione —</option></select>
+        </div>
+        <div id="crit-content"><div class="empty"><i class="fa-solid fa-sliders"></i><p>Selecione um evento para ver os critérios de desempate</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PÁGINA: PERFIL ════ -->
+  <div class="page" id="page-perfil">
+    <div class="pi">
+      <div style="margin-bottom:16px;"><div class="ptitle">PERFIL</div></div>
+      <div class="card" id="perfil-card" style="margin-bottom:20px;"></div>
+      <div style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:16px;">
+        <div class="sl">Trocar Senha</div>
+        <div class="fr"><label class="form-label">Nova senha</label>
+          <div class="fi-pw"><input type="password" class="fi form-input" id="np" placeholder="Mín. 6 caracteres"><button class="eye" onclick="togglePw('np',this)"><i class="fa-regular fa-eye"></i></button></div>
+        </div>
+        <div class="fr"><label class="form-label">Confirmar nova senha</label>
+          <div class="fi-pw"><input type="password" class="fi form-input" id="cp" placeholder="Repita a senha"><button class="eye" onclick="togglePw('cp',this)"><i class="fa-regular fa-eye"></i></button></div>
+        </div>
+        <button class="btn btn-g" onclick="changePassword()">Atualizar Senha</button>
+      </div>
+      <button class="btn btn-r btn-full" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bnav">
+    <button class="ni active" onclick="showPage('consultas')" id="ni-consultas"><i class="fa-solid fa-chart-line"></i>Consultas</button>
+    <button class="ni" onclick="showPage('evolucao')" id="ni-evolucao"><i class="fa-solid fa-calendar-check"></i>Evolução</button>
+    <button class="ni" onclick="showPage('cadastros')" id="ni-cadastros"><i class="fa-solid fa-calendar-star"></i>Eventos</button>
+    <button class="ni" onclick="showPage('perfil')" id="ni-perfil"><i class="fa-solid fa-user"></i>Perfil</button>
+  </nav>
+</div>
+
+<!-- MODAL SCORE -->
+<div id="modal-score" style="display:none;position:fixed;inset:0;bottom:60px;z-index:300;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--card);border:.5px solid var(--border2);border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:88vh;overflow-y:auto;padding:22px 18px 32px;animation:slideUp .3s ease;">
+    <div style="width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px;"></div>
+    <div style="font-family:var(--fd);font-size:26px;color:var(--text);margin-bottom:4px;letter-spacing:1px;">REGISTRAR PLACAR</div>
+    <div id="sc-info" style="font-size:13px;color:var(--text2);margin-bottom:16px;"></div>
+    <input type="hidden" id="sc-mid">
+    <div class="sl">Sets (Melhor de 3 · 6 games/set · Tiebreak em 6/6)</div>
+    <div id="sc-sets"></div>
+    <p style="font-size:10px;color:var(--text3);margin-bottom:14px;">Sets vazios (0-0 no 3º) são ignorados automaticamente.</p>
+    <button class="btn btn-g btn-full" onclick="salvarPlacar()"><i class="fa-solid fa-check"></i> Salvar Resultado</button>
+    <button class="btn btn-gh btn-full" style="margin-top:8px;" onclick="closeScore()">Cancelar</button>
+  </div>
+</div>
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+<script>
+// ═══════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBKtYW4pSokqb-JZ0eJ0pCxPzm6sBLsXrA",
+  authDomain: "liga-pro-tenis.firebaseapp.com",
+  projectId: "liga-pro-tenis",
+  storageBucket: "liga-pro-tenis.firebasestorage.app",
+  messagingSenderId: "706635274020",
+  appId: "1:706635274020:web:9ff5e98796e1529fc5c5b1"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ═══════════════════════════════════
+// EMAILJS CONFIG
+// ═══════════════════════════════════
+const EMAILJS_PUBLIC_KEY  = 'Fy8loUzsYYQG80p8Z';
+const EMAILJS_SERVICE_ID  = 'service_jyj1a43';
+const EMAILJS_TEMPLATE_ID = 'template_g91ydgy';
+let emailJSReady = false;
+function initEmailJS() {
+  if (EMAILJS_PUBLIC_KEY !== 'COLE_SUA_PUBLIC_KEY_AQUI') {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    emailJSReady = true;
+  }
+}
+initEmailJS();
+
+async function enviarEmailDesafio(paraEmail, paraNome, deNome, eventoNome) {
+  if (!emailJSReady) return;
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: paraEmail,
+      to_name: paraNome,
+      from_name: deNome,
+      evento_nome: eventoNome,
+      app_link: window.location.href,
+      message: `${deNome} te desafiou para uma partida no evento "${eventoNome}" da Liga Minaçu Tênis! Acesse o app para confirmar, adiar ou cancelar o jogo.`
+    });
+  } catch(e) { console.warn('EmailJS erro:', e); }
+}
+
+// ═══════════════════════════════════
+// ALERTA DE DESAFIOS PENDENTES
+// ═══════════════════════════════════
+async function verificarDesafiosPendentes() {
+  const pendentes = allMatches.filter(m =>
+    m.status === 'pendente' && m.jogador2Id === CU.uid
+  );
+  if (!pendentes.length) return;
+
+  const lista = document.getElementById('desafios-lista');
+  lista.innerHTML = pendentes.map(m => {
+    const p1 = ga(m.jogador1Id);
+    const ev = ge(m.eventoId);
+    return `
+    <div style="padding:14px 20px;border-bottom:.5px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg4);border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:15px;color:var(--green);flex-shrink:0;">${(p1?.nome||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()}</div>
+        <div>
+          <div style="font-family:var(--fc);font-size:15px;font-weight:700;">${p1?.nome||'?'} <span style="color:var(--text2);font-weight:400;">te desafiou</span></div>
+          <div style="font-size:11px;color:var(--text2);">Evento: ${ev?.titulo||'—'} ${m.data?'· '+fmtD(m.data):''}</div>
+          ${m.local?`<div style="font-size:11px;color:var(--text3);"><i class="fa-solid fa-location-dot"></i> ${m.local}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-g" style="flex:1;padding:9px;justify-content:center;" onclick="aceitarDesafio('${m.id}')">
+          <i class="fa-solid fa-check"></i> Aceitar
+        </button>
+        <button class="btn" style="flex:1;padding:9px;justify-content:center;background:rgba(74,158,255,0.12);color:var(--blue);border-color:rgba(74,158,255,0.3);" onclick="adiarDesafio('${m.id}')">
+          <i class="fa-solid fa-clock"></i> Adiar
+        </button>
+        <button class="btn btn-r" style="flex:1;padding:9px;justify-content:center;" onclick="recusarDesafio('${m.id}')">
+          <i class="fa-solid fa-xmark"></i> Recusar
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('modal-desafios').style.display = 'flex';
+}
+
+function fecharDesafios() {
+  document.getElementById('modal-desafios').style.display = 'none';
+}
+
+async function aceitarDesafio(id) {
+  await db.collection('jogos').doc(id).update({ status: 'confirmado' });
+  showToast('✅ Jogo confirmado!');
+  await loadAll();
+  // Atualiza o modal — remove o aceito
+  const pendentes = allMatches.filter(m => m.status === 'pendente' && m.jogador2Id === CU.uid);
+  if (!pendentes.length) fecharDesafios();
+  else verificarDesafiosPendentes();
+}
+
+async function adiarDesafio(id) {
+  await db.collection('jogos').doc(id).update({ status: 'adiado' });
+  showToast('⏰ Jogo adiado. Será remarcado pelo organizador.');
+  await loadAll();
+  const pendentes = allMatches.filter(m => m.status === 'pendente' && m.jogador2Id === CU.uid);
+  if (!pendentes.length) fecharDesafios();
+  else verificarDesafiosPendentes();
+}
+
+async function recusarDesafio(id) {
+  await db.collection('jogos').doc(id).delete();
+  showToast('Jogo recusado.');
+  await loadAll();
+  const pendentes = allMatches.filter(m => m.status === 'pendente' && m.jogador2Id === CU.uid);
+  if (!pendentes.length) fecharDesafios();
+  else verificarDesafiosPendentes();
+}
+
+
+let CU = null, CUD = null;
+let allAthletes = [], allMatches = [], allEvents = [];
+let jogoEvId = null, jogoFilter = 'pendente';
+let inscritosEv = [];
+
+// Critérios de desempate disponíveis (baseado na tabela CBT/referência)
+const CRITERIOS_DISPONIVEIS = [
+  {id:'pts',label:'Pontuação (Pts)'},
+  {id:'vitorias',label:'Vitórias (V)'},
+  {id:'derrotas',label:'Derrotas (D)'},
+  {id:'saldo_sets',label:'Saldo de Sets (S.V - S.P)'},
+  {id:'sets_vencidos',label:'Sets Vencidos (S.V)'},
+  {id:'sets_perdidos',label:'Menor Sets Perdidos (S.P)'},
+  {id:'saldo_games',label:'Saldo de Games (G.V - G.P)'},
+  {id:'games_vencidos',label:'Games Vencidos (G.V)'},
+  {id:'games_perdidos',label:'Menor Games Perdidos (G.P)'},
+  {id:'jogos',label:'Jogos Disputados (J)'},
+  {id:'aproveitamento',label:'% Aproveitamento'},
+  {id:'h2h',label:'Confronto Direto (H2H)'},
+];
+
+// ═══════════════════════════════════
+// AUTH
+// ═══════════════════════════════════
+auth.onAuthStateChanged(async u => {
+  if (u) {
+    CU = u;
+    const doc = await db.collection('atletas').doc(u.uid).get();
+    if (!doc.exists) { await doLogout(); return; }
+    CUD = {id: u.uid, ...doc.data()};
+    initApp();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+async function doLogin() {
+  const email = document.getElementById('lemail').value.trim();
+  const pass = document.getElementById('lpass').value;
+  const btn = document.getElementById('lbtn');
+  const err = document.getElementById('lerr');
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  try { await auth.signInWithEmailAndPassword(email, pass); }
+  catch(e) { err.textContent = 'E-mail ou senha inválidos.'; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Entrar'; }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('lpass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+});
+async function doLogout() { await auth.signOut(); location.reload(); }
+
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  icon.className = inp.type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+  btn.style.color = inp.type === 'text' ? 'var(--green)' : 'var(--text3)';
+}
+
+async function changePassword() {
+  const np = document.getElementById('np').value;
+  const cp = document.getElementById('cp').value;
+  if (np.length < 6) { showToast('Mínimo 6 caracteres', true); return; }
+  if (np !== cp) { showToast('Senhas não coincidem', true); return; }
+  try { await CU.updatePassword(np); showToast('Senha atualizada!'); document.getElementById('np').value=''; document.getElementById('cp').value=''; }
+  catch(e) { showToast('Faça login novamente e tente', true); }
+}
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+async function initApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app').style.flexDirection = 'column';
+
+  const ini = (CUD.nome||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('nav-av').textContent = ini;
+
+  if (CUD.admin) {
+    document.getElementById('nav-admin-badge').innerHTML = '<span class="admin-tag"><i class="fa-solid fa-star"></i> Admin</span>';
+    // Admin: vê Atletas + Eventos + Critérios
+    document.getElementById('cad-title').textContent = 'CADASTROS';
+    document.getElementById('cad-sub').textContent = 'Atletas, Eventos e Critérios';
+    document.getElementById('cad-snav').innerHTML = `
+      <button class="sn active" onclick="showSub('cadastros','atletas',this)">Atletas</button>
+      <button class="sn" onclick="showSub('cadastros','eventos',this)">Eventos</button>
+      <button class="sn" onclick="showSub('cadastros','criterios',this)">Critérios</button>`;
+    document.getElementById('sub-cadastros-atletas').style.display = 'block';
+    document.getElementById('sub-cadastros-eventos').style.display = 'none';
+    document.getElementById('btn-novo-evento').style.display = 'flex';
+  } else {
+    // Atleta: vê só Eventos e Critérios (sem criar/editar)
+    document.getElementById('cad-title').textContent = 'EVENTOS';
+    document.getElementById('cad-sub').textContent = 'Consulte eventos e critérios';
+    document.getElementById('cad-snav').innerHTML = `
+      <button class="sn active" onclick="showSub('cadastros','eventos',this)">Eventos</button>
+      <button class="sn" onclick="showSub('cadastros','criterios',this)">Critérios</button>`;
+    document.getElementById('sub-cadastros-atletas').style.display = 'none';
+    document.getElementById('sub-cadastros-eventos').style.display = 'block';
+    document.getElementById('btn-novo-evento').style.display = 'none';
+  }
+
+  document.getElementById('perfil-card').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:50px;height:50px;border-radius:50%;background:var(--bg4);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:20px;color:var(--green);">${ini}</div>
+      <div>
+        <div style="font-family:var(--fc);font-size:18px;font-weight:700;">${CUD.nome}</div>
+        <div style="font-size:12px;color:var(--text2);">${CUD.email}</div>
+        <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;">
+          <span class="rbadge rbm">${CUD.classe||'—'}</span>
+          <span class="rbadge rbm">${CUD.categoria||'—'}</span>
+          <span class="rbadge rbm">${CUD.sexo==='M'?'Masculino':'Feminino'}</span>
+          ${CUD.admin?'<span class="admin-tag"><i class="fa-solid fa-star"></i> Admin</span>':''}
+        </div>
+      </div>
+    </div>`;
+
+  await loadAll();
+  verificarDesafiosPendentes();
+}
+  const [athSnap, evSnap, mSnap] = await Promise.all([
+    db.collection('atletas').get(),
+    db.collection('eventos').orderBy('criadoEm','desc').get(),
+    db.collection('jogos').orderBy('criadoEm','desc').get()
+  ]);
+  allAthletes = athSnap.docs.map(d=>({id:d.id,...d.data()}));
+  allEvents = evSnap.docs.map(d=>({id:d.id,...d.data()}));
+  allMatches = mSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+  populateSelects();
+  renderInscricoes();
+  if (CUD.admin) { renderAtletas(); renderEventos(); }
+}
+
+function populateSelects() {
+  const opts = '<option value="">— selecione —</option>' +
+    allEvents.map(e=>`<option value="${e.id}">${e.titulo}${e.ativo?' ●':''}</option>`).join('');
+  ['dash-ev-sel','rev-sel','res-ev-sel','jg-ev-sel','pl-ev-sel','crit-ev-sel'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = opts;
+  });
+  // Ranking geral checkboxes
+  const rg = document.getElementById('rg-eventos-check');
+  if(rg) rg.innerHTML = allEvents.map(e=>`
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer;background:var(--bg4);padding:6px 12px;border-radius:var(--rs);border:.5px solid var(--border);">
+      <input type="checkbox" value="${e.id}" ${e.ativo?'checked':''}> ${e.titulo}
+    </label>`).join('');
+  // Pré-selecionar evento ativo
+  const ativo = allEvents.find(e=>e.ativo);
+  if (ativo) {
+    ['dash-ev-sel','rev-sel','res-ev-sel','pl-ev-sel'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value=ativo.id;
+    });
+  }
+}
+
+// ═══════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const ni = document.getElementById('ni-'+name);
+  if(ni) ni.classList.add('active');
+  if(name==='evolucao') renderInscricoes();
+  if(name==='cadastros') { renderAtletas(); renderEventos(); }
+  if(name==='consultas') { loadDashboard(); }
+}
+
+function showSub(page, sub, btn) {
+  document.querySelectorAll(`#page-${page} [id^="sub-${page}-"]`).forEach(el=>el.style.display='none');
+  document.getElementById(`sub-${page}-${sub}`).style.display='block';
+  document.querySelectorAll(`#page-${page} .sn`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(page==='consultas'){
+    if(sub==='dashboard') loadDashboard();
+    if(sub==='ranking-ev') loadRankingEvento();
+    if(sub==='ranking-geral') {}
+    if(sub==='resultados') loadResultados();
+  }
+  if(page==='evolucao' && sub==='inscricao') renderInscricoes();
+  if(page==='evolucao' && sub==='placar') loadPlacar();
+  if(page==='cadastros' && sub==='atletas') renderAtletas();
+  if(page==='cadastros' && sub==='eventos') renderEventos();
+  if(page==='cadastros' && sub==='criterios') {}
+}
+
+function toggleForm(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════
+function ga(id) { return allAthletes.find(a=>a.id===id); }
+function ge(id) { return allEvents.find(e=>e.id===id); }
+function fmtD(d) {
+  if(!d) return '';
+  if(typeof d==='string') { const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; }
+  if(d.toDate) return d.toDate().toLocaleDateString('pt-BR');
+  return d;
+}
+function showToast(msg, isErr=false) {
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t=document.createElement('div'); t.className='toast'+(isErr?' err':''); t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),3100);
+}
+function pctColor(p) { return p>=75?'var(--green)':p>=40?'var(--gold)':'var(--red)'; }
+
+// Calcular stats de um atleta num evento
+function calcStats(atletaId, eventoId) {
+  const jogos = allMatches.filter(m=>m.eventoId===eventoId && m.status==='finalizado' && (m.jogador1Id===atletaId||m.jogador2Id===atletaId));
+  let j=0,v=0,d=0,sv=0,sp=0,gv=0,gp=0;
+  jogos.forEach(m=>{
+    j++;
+    const sou1 = m.jogador1Id===atletaId;
+    if(m.vencedor===atletaId) v++; else d++;
+    (m.sets||[]).forEach(s=>{
+      const ms = sou1?s.p1:s.p2, os = sou1?s.p2:s.p1;
+      if(ms>os) sv++; else sp++;
+      gv+=ms; gp+=os;
+    });
+  });
+  const ev = ge(eventoId);
+  const pts = v*(ev?.ptsVitoria||3)+d*(ev?.ptsPerdedor||1);
+  return {j,v,d,sv,sp,ss:sv-sp,gv,gp,sg:gv-gp,pts,apr:j>0?Math.round((v/j)*100):0};
+}
+
+// Ordenar ranking por critérios
+function sortByCriterios(data, criterios) {
+  const order = criterios || ['pts','vitorias','saldo_sets','saldo_games','games_vencidos'];
+  return [...data].sort((a,b)=>{
+    for(const c of order){
+      let va=0,vb=0;
+      if(c==='pts'){va=a.pts;vb=b.pts}
+      else if(c==='vitorias'){va=a.v;vb=b.v}
+      else if(c==='derrotas'){va=b.d;vb=a.d}
+      else if(c==='saldo_sets'){va=a.ss;vb=b.ss}
+      else if(c==='sets_vencidos'){va=a.sv;vb=b.sv}
+      else if(c==='sets_perdidos'){va=b.sp;vb=a.sp}
+      else if(c==='saldo_games'){va=a.sg;vb=b.sg}
+      else if(c==='games_vencidos'){va=a.gv;vb=b.gv}
+      else if(c==='games_perdidos'){va=b.gp;vb=a.gp}
+      else if(c==='jogos'){va=a.j;vb=b.j}
+      else if(c==='aproveitamento'){va=a.apr;vb=b.apr}
+      if(va!==vb) return vb-va;
+    }
+    return 0;
+  });
+}
+
+// ═══════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════
+async function loadDashboard() {
+  const evId = document.getElementById('dash-ev-sel').value;
+  const cont = document.getElementById('dash-content');
+  if(!evId){cont.innerHTML='<div class="empty"><i class="fa-solid fa-chart-line"></i><p>Selecione um evento</p></div>';return;}
+  const ev = ge(evId);
+  const inscSnap = await db.collection('inscricoes').where('eventoId','==',evId).get();
+  const inscIds = inscSnap.docs.map(d=>d.data().atletaId);
+  const inscritos = allAthletes.filter(a=>inscIds.includes(a.id));
+  const jogosEv = allMatches.filter(m=>m.eventoId===evId);
+  const realizados = jogosEv.filter(m=>m.status==='finalizado');
+  const confirmados = jogosEv.filter(m=>m.status==='confirmado');
+  const pendentes = jogosEv.filter(m=>m.status==='pendente');
+  const n = inscritos.length;
+  const previstos = n>1?(n*(n-1))/2:0;
+  const pct = previstos>0?Math.round((realizados.length/previstos)*100):0;
+  const hoje = new Date();
+  const ini = ev.inicio?new Date(ev.inicio):null;
+  const fim = ev.fim?new Date(ev.fim):null;
+  const totalD = ini&&fim?Math.max(1,Math.round((fim-ini)/86400000)):0;
+  const passD = ini?Math.max(0,Math.min(totalD,Math.round((hoje-ini)/86400000))):0;
+  const tpct = totalD>0?Math.round((passD/totalD)*100):0;
+
+  // ranking para top4/bot4
+  const rankData = inscritos.map(a=>({...a,...calcStats(a.id,evId)}));
+  const crit = ev.criterios||['pts','vitorias','saldo_sets','saldo_games'];
+  const sorted = sortByCriterios(rankData, crit).filter(r=>r.j>0);
+
+  // últimos 5 e próximos 5
+  const ultimos5 = realizados.slice(0,5);
+  const proximos5 = [...confirmados,...pendentes].slice(0,5);
+
+  cont.innerHTML = `
+    <!-- Info evento -->
+    <div style="background:var(--bg4);border:.5px solid var(--border2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-family:var(--fc);font-size:18px;font-weight:800;">${ev.titulo}</div>
+        <div style="font-size:12px;color:var(--text2);">${fmtD(ev.inicio)} – ${fmtD(ev.fim)} · ${ev.formato||''}</div>
+      </div>
+      ${ev.ativo?'<span class="rbadge rbg">● ATIVO</span>':'<span class="rbadge rbm">Encerrado</span>'}
+    </div>
+    <!-- Stats -->
+    <div class="dstats">
+      <div class="dstat"><div class="dstat-n">${n}</div><div class="dstat-l">Inscritos</div></div>
+      <div class="dstat"><div class="dstat-n">${realizados.length}</div><div class="dstat-l">Realizados</div></div>
+      <div class="dstat"><div class="dstat-n">${previstos}</div><div class="dstat-l">Previstos</div></div>
+    </div>
+    <div class="dstats" style="margin-top:-4px;">
+      <div class="dstat"><div class="dstat-n" style="color:var(--gold);">${confirmados.length}</div><div class="dstat-l">Confirmados</div></div>
+      <div class="dstat"><div class="dstat-n" style="color:var(--text2);">${pendentes.length}</div><div class="dstat-l">Pendentes</div></div>
+      <div class="dstat"><div class="dstat-n" style="color:var(--blue);">${inscIds.length}</div><div class="dstat-l">Atletas</div></div>
+    </div>
+    <!-- Progress -->
+    <div class="card">
+      <div class="pbar-wrap">
+        <div class="pbar-top"><span class="pbar-label">Jogos realizados</span><span class="pbar-pct" style="color:${pctColor(pct)}">${pct}%</span></div>
+        <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${pctColor(pct)};box-shadow:0 0 6px ${pctColor(pct)}60;"></div></div>
+        <div class="pbar-sub">${realizados.length} de ${previstos} jogos concluídos</div>
+      </div>
+      <div class="pbar-wrap" style="margin-bottom:0">
+        <div class="pbar-top"><span class="pbar-label">Tempo decorrido</span><span class="pbar-pct" style="color:${pctColor(tpct)}">${tpct}%</span></div>
+        <div class="pbar"><div class="pbar-fill" style="width:${tpct}%;background:${pctColor(tpct)};"></div></div>
+        <div class="pbar-sub">${passD} de ${totalD} dias</div>
+      </div>
+    </div>
+    <!-- Top 4 -->
+    ${sorted.length?`
+    <div class="sl" style="margin-top:4px;">Top 4 <i class="fa-solid fa-crown" style="color:var(--gold);font-size:11px;"></i></div>
+    ${sorted.slice(0,4).map((s,i)=>`
+      <div class="top4-row" style="${i===0?'border-color:rgba(255,215,0,.3);':''}">
+        <div class="top4-medal">${['🥇','🥈','🥉','4°'][i]}</div>
+        <div>
+          <div class="top4-name">${s.nome}</div>
+          <div style="font-size:11px;color:var(--text2);">${s.j}J · ${s.v}V · ${s.d}D</div>
+        </div>
+        <div class="top4-pts">${s.pts}<span style="font-size:10px;font-weight:400;color:var(--text3);">pts</span></div>
+      </div>`).join('')}
+    <!-- Bot 4 -->
+    ${sorted.length>4?`
+    <div class="sl" style="margin-top:12px;">Lanterna <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:11px;"></i></div>
+    ${sorted.slice(-4).reverse().map(s=>`
+      <div class="top4-row" style="border-color:rgba(255,61,61,.2);">
+        <div class="top4-medal" style="font-size:16px;">⚠️</div>
+        <div>
+          <div class="top4-name">${s.nome}</div>
+          <div style="font-size:11px;color:var(--text2);">${s.j}J · ${s.v}V · ${s.d}D</div>
+        </div>
+        <div class="top4-pts" style="color:var(--red);">${s.pts}<span style="font-size:10px;font-weight:400;color:var(--text3);">pts</span></div>
+      </div>`).join('')}`:''}`:''}
+    <!-- Últimos 5 -->
+    ${ultimos5.length?`
+    <div class="sl" style="margin-top:12px;">Últimos resultados</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      ${ultimos5.map(m=>{
+        const p1=ga(m.jogador1Id),p2=ga(m.jogador2Id);
+        const w=ga(m.vencedor);
+        const sc=(m.sets||[]).map(s=>`${s.p1}-${s.p2}`).join(' / ');
+        return `<div class="rm-row">
+          <div class="rm-name" style="${m.vencedor===m.jogador1Id?'color:var(--green);font-weight:700;':''}">${p1?.nome?.split(' ')[0]||'?'}</div>
+          <div class="rm-score">${sc||'—'}</div>
+          <div class="rm-name" style="text-align:right;${m.vencedor===m.jogador2Id?'color:var(--green);font-weight:700;':''}">${p2?.nome?.split(' ')[0]||'?'}</div>
+        </div>`;
+      }).join('')}
+    </div>`:''}
+    <!-- Próximos 5 -->
+    ${proximos5.length?`
+    <div class="sl" style="margin-top:12px;">Próximas partidas</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      ${proximos5.map(m=>{
+        const p1=ga(m.jogador1Id),p2=ga(m.jogador2Id);
+        const sta=m.status==='confirmado'?'<span class="mstatus sc">✅ Confirmado</span>':'<span class="mstatus sp">⏳ Pendente</span>';
+        return `<div class="rm-row">
+          <div class="rm-name">${p1?.nome?.split(' ')[0]||'?'}</div>
+          <div>${sta}</div>
+          <div class="rm-name" style="text-align:right;">${p2?.nome?.split(' ')[0]||'?'}</div>
+        </div>`;
+      }).join('')}
+    </div>`:''}
+  `;
+}
+
+// ═══════════════════════════════════
+// RANKING EVENTO
+// ═══════════════════════════════════
+async function loadRankingEvento() {
+  const evId = document.getElementById('rev-sel').value;
+  const cont = document.getElementById('rev-content');
+  if(!evId){cont.innerHTML='<div class="empty"><i class="fa-solid fa-ranking-star"></i><p>Selecione um evento</p></div>';return;}
+  const ev = ge(evId);
+  const inscSnap = await db.collection('inscricoes').where('eventoId','==',evId).get();
+  const inscIds = inscSnap.docs.map(d=>d.data().atletaId);
+  const inscritos = allAthletes.filter(a=>inscIds.includes(a.id));
+  const crit = ev.criterios||['pts','vitorias','saldo_sets','saldo_games'];
+  const data = sortByCriterios(inscritos.map(a=>({...a,...calcStats(a.id,evId)})), crit);
+  const n = data.length;
+  if(!n){cont.innerHTML='<div class="empty"><i class="fa-solid fa-ranking-star"></i><p>Nenhum inscrito neste evento</p></div>';return;}
+  cont.innerHTML = `
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;"><b>Legenda:</b> J=Jogos · V=Vitórias · D=Derrotas · S.V=Sets Vencidos · S.P=Sets Perdidos · S.S=Saldo Sets · G.V=Games Vencidos · G.P=Games Perdidos · Pts=Pontuação</div>
+    <div class="tscroll">
+      <table class="rtable">
+        <thead><tr><th>#</th><th>Zona</th><th>Atleta</th><th>J</th><th>V</th><th>D</th><th>S.V</th><th>S.P</th><th>S.S</th><th>G.V</th><th>G.P</th><th>Pts</th></tr></thead>
+        <tbody>${data.map((s,i)=>{
+          const pos=i+1;
+          const isTop=pos<=4,isBot=pos>n-4&&n>4;
+          const pcls=pos===1?'p1':pos===2?'p2':pos===3?'p3':pos===4?'p4':isBot?'pb':'';
+          const zona=isTop?'<span class="rbadge zona-top">Top</span>':isBot?'<span class="rbadge zona-bot">Bot</span>':'<span class="rbadge zona-mid">—</span>';
+          return `<tr>
+            <td><span class="rpos ${pcls}">${pos}</span></td>
+            <td>${zona}</td>
+            <td><div style="font-weight:600;white-space:nowrap;">${s.nome}</div><div style="font-size:10px;color:var(--text2);">${s.classe||''}</div></td>
+            <td>${s.j}</td><td>${s.v}</td><td>${s.d}</td>
+            <td>${s.sv}</td><td>${s.sp}</td><td style="color:${s.ss>=0?'var(--green)':'var(--red)'};">${s.ss>0?'+':''}${s.ss}</td>
+            <td>${s.gv}</td><td>${s.gp}</td>
+            <td class="pts">${s.pts}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+// ═══════════════════════════════════
+// RANKING GERAL
+// ═══════════════════════════════════
+async function loadRankingGeral() {
+  const checks = document.querySelectorAll('#rg-eventos-check input:checked');
+  const evIds = [...checks].map(c=>c.value);
+  const cont = document.getElementById('rg-content');
+  if(!evIds.length){showToast('Selecione ao menos um evento',true);return;}
+
+  // Para cada atleta, somar stats de todos os eventos selecionados
+  const statsMap = {};
+  allAthletes.forEach(a=>{ statsMap[a.id]={...a,j:0,v:0,d:0,sv:0,sp:0,gv:0,gp:0,pts:0}; });
+
+  for(const evId of evIds){
+    // só atletas inscritos neste evento
+    const inscSnap = await db.collection('inscricoes').where('eventoId','==',evId).get();
+    const inscIds = inscSnap.docs.map(d=>d.data().atletaId);
+    inscIds.forEach(aid=>{
+      if(!statsMap[aid]) return;
+      const s = calcStats(aid,evId);
+      statsMap[aid].j+=s.j; statsMap[aid].v+=s.v; statsMap[aid].d+=s.d;
+      statsMap[aid].sv+=s.sv; statsMap[aid].sp+=s.sp;
+      statsMap[aid].gv+=s.gv; statsMap[aid].gp+=s.gp;
+      statsMap[aid].pts+=s.pts;
+    });
+  }
+  const data = Object.values(statsMap).map(s=>({...s,ss:s.sv-s.sp,sg:s.gv-s.gp,apr:s.j>0?Math.round((s.v/s.j)*100):0}));
+  const sorted = sortByCriterios(data,['pts','vitorias','saldo_sets','saldo_games']);
+  const n=sorted.length;
+  cont.innerHTML = `
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Ranking consolidado de ${evIds.length} evento(s) selecionado(s)</div>
+    <div class="tscroll">
+      <table class="rtable">
+        <thead><tr><th>#</th><th>Zona</th><th>Atleta</th><th>J</th><th>V</th><th>D</th><th>S.S</th><th>G.V</th><th>G.P</th><th>Pts</th></tr></thead>
+        <tbody>${sorted.map((s,i)=>{
+          const pos=i+1;
+          const isTop=pos<=4,isBot=pos>n-4&&n>4;
+          const pcls=pos===1?'p1':pos===2?'p2':pos===3?'p3':pos===4?'p4':isBot?'pb':'';
+          const zona=isTop?'<span class="rbadge zona-top">Top</span>':isBot?'<span class="rbadge zona-bot">Bot</span>':'<span class="rbadge zona-mid">—</span>';
+          return `<tr>
+            <td><span class="rpos ${pcls}">${pos}</span></td>
+            <td>${zona}</td>
+            <td><div style="font-weight:600;white-space:nowrap;">${s.nome}</div><div style="font-size:10px;color:var(--text2);">${s.classe||''}</div></td>
+            <td>${s.j}</td><td>${s.v}</td><td>${s.d}</td>
+            <td style="color:${s.ss>=0?'var(--green)':'var(--red)'};">${s.ss>0?'+':''}${s.ss}</td>
+            <td>${s.gv}</td><td>${s.gp}</td>
+            <td class="pts">${s.pts}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+// ═══════════════════════════════════
+// RESULTADOS
+// ═══════════════════════════════════
+async function loadResultados() {
+  const evId = document.getElementById('res-ev-sel').value;
+  const cont = document.getElementById('res-content');
+  if(!evId){cont.innerHTML='<div class="empty"><i class="fa-solid fa-list-check"></i><p>Selecione um evento</p></div>';return;}
+  const jogos = allMatches.filter(m=>m.eventoId===evId&&m.status==='finalizado');
+  if(!jogos.length){cont.innerHTML='<div class="empty"><i class="fa-solid fa-list-check"></i><p>Nenhum resultado registrado</p></div>';return;}
+  cont.innerHTML = jogos.map(m=>{
+    const p1=ga(m.jogador1Id),p2=ga(m.jogador2Id);
+    const sc=(m.sets||[]).map(s=>`${s.p1}-${s.p2}`).join(' / ');
+    const w=m.vencedor;
+    return `<div class="mc">
+      <div class="mplayers">
+        <div class="mp"><div class="mpn" style="${w===m.jogador1Id?'color:var(--green);':''}">${p1?.nome||'?'}</div><div class="mpc">${p1?.classe||''}</div></div>
+        <div class="mvs">VS</div>
+        <div class="mp" style="text-align:right;"><div class="mpn" style="${w===m.jogador2Id?'color:var(--green);':''}">${p2?.nome||'?'}</div><div class="mpc">${p2?.classe||''}</div></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        ${(m.sets||[]).map((s,i)=>`<div class="set-box"><div class="set-label">Set ${i+1}</div><div class="set-score"><span class="${s.p1>s.p2?'sw':'sl2'}">${s.p1}</span><span style="color:var(--text3);font-size:12px;">-</span><span class="${s.p2>s.p1?'sw':'sl2'}">${s.p2}</span></div></div>`).join('')}
+        <div style="flex:1;text-align:right;font-size:12px;color:var(--text2);">${fmtD(m.data)||''}</div>
+      </div>
+      ${w?`<div style="margin-top:8px;font-family:var(--fc);font-size:12px;color:var(--green);"><i class="fa-solid fa-trophy"></i> ${ga(w)?.nome||'?'}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════
+// INSCRIÇÕES
+// ═══════════════════════════════════
+async function renderInscricoes() {
+  const cont = document.getElementById('inscricao-list');
+  if(!cont) return;
+  const inscSnap = await db.collection('inscricoes').where('atletaId','==',CU.uid).get();
+  const meusEvIds = inscSnap.docs.map(d=>({docId:d.id,evId:d.data().eventoId}));
+  const meusEvMap = {};
+  meusEvIds.forEach(x=>meusEvMap[x.evId]=x.docId);
+
+  if(!allEvents.length){cont.innerHTML='<div class="empty"><i class="fa-solid fa-trophy"></i><p>Nenhum evento disponível</p></div>';return;}
+  const hoje = new Date();
+  cont.innerHTML = allEvents.map(e=>{
+    const fim=e.fim?new Date(e.fim):null;
+    const enc=fim&&fim<hoje;
+    const ins=!!meusEvMap[e.id];
+    const docId=meusEvMap[e.id];
+    const sc=e.ativo?'<span class="rbadge rbg">● ATIVO</span>':enc?'<span class="rbadge rbb">Encerrado</span>':'<span class="rbadge rbm">Em breve</span>';
+    // inscritos count
+    const insCount = allMatches.filter(m=>m.eventoId===e.id).length;
+    return `<div style="background:var(--card);border:.5px solid ${ins?'var(--green)':'var(--border)'};border-radius:var(--r);overflow:hidden;margin-bottom:12px;${ins?'box-shadow:0 0 16px rgba(0,200,83,.07);':''}">
+      <div style="padding:14px 14px 10px;border-bottom:.5px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="font-family:var(--fc);font-size:17px;font-weight:800;">${e.titulo}</div>${sc}
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:5px;display:flex;gap:12px;flex-wrap:wrap;">
+          <span><i class="fa-regular fa-calendar"></i> ${fmtD(e.inicio)} – ${fmtD(e.fim)}</span>
+          <span><i class="fa-solid fa-sitemap"></i> ${e.formato==='round-robin'?'Round Robin':e.formato||'—'}</span>
+          <span><i class="fa-solid fa-star"></i> ${e.ptsVitoria||3}pts/V</span>
+        </div>
+        ${e.regras?`<div style="font-size:11px;color:var(--text3);margin-top:6px;">${e.regras}</div>`:''}
+      </div>
+      <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        ${ins
+          ?`<span class="ins-badge"><i class="fa-solid fa-circle-check"></i> Inscrito</span>
+             <button class="btn btn-r" onclick="cancelarIns('${e.id}','${docId}')">Cancelar inscrição</button>`
+          :enc
+          ?`<span style="font-size:12px;color:var(--text3);">Evento encerrado</span>`
+          :`<span style="font-size:12px;color:var(--text2);">Você não está inscrito</span>
+             <button class="btn btn-g" onclick="inscrever('${e.id}')"><i class="fa-solid fa-plus"></i> Inscrever-se</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function inscrever(evId) {
+  try {
+    await db.collection('inscricoes').add({atletaId:CU.uid,eventoId:evId,criadoEm:firebase.firestore.FieldValue.serverTimestamp()});
+    showToast('✅ Inscrito com sucesso!');
+    await loadAll(); renderInscricoes();
+  } catch(e){showToast('Erro: '+e.message,true);}
+}
+async function cancelarIns(evId, docId) {
+  try {
+    await db.collection('inscricoes').doc(docId).delete();
+    showToast('Inscrição cancelada');
+    await loadAll(); renderInscricoes();
+  } catch(e){showToast('Erro: '+e.message,true);}
+}
+
+// ═══════════════════════════════════
+// JOGOS
+// ═══════════════════════════════════
+async function onJogosEventoChange() {
+  const evId = document.getElementById('jg-ev-sel').value;
+  jogoEvId = evId;
+  const area=document.getElementById('jg-area'), empty=document.getElementById('jg-empty');
+  if(!evId){area.style.display='none';empty.style.display='block';return;}
+  area.style.display='block'; empty.style.display='none';
+  const ev=ge(evId);
+  document.getElementById('jg-ev-info').innerHTML=`<div style="background:var(--bg4);border:.5px solid var(--border2);border-radius:var(--rs);padding:9px 13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><div><div style="font-family:var(--fc);font-size:15px;font-weight:700;">${ev?.titulo||''}</div><div style="font-size:11px;color:var(--text2);">${fmtD(ev?.inicio)} – ${fmtD(ev?.fim)}</div></div>${ev?.ativo?'<span class="rbadge rbg">● ATIVO</span>':'<span class="rbadge rbm">Encerrado</span>'}</div>`;
+  // Buscar inscritos
+  const inscSnap = await db.collection('inscricoes').where('eventoId','==',evId).get();
+  const inscIds = inscSnap.docs.map(d=>d.data().atletaId);
+  inscritosEv = allAthletes.filter(a=>inscIds.includes(a.id));
+  // Popular atleta 1
+  const a1=document.getElementById('j-a1');
+  a1.innerHTML='<option value="">— selecione —</option>'+inscritosEv.map(a=>`<option value="${a.id}">${a.nome} (${a.classe||'—'})</option>`).join('');
+  document.getElementById('j-a2').innerHTML='<option value="">— selecione o 1º atleta primeiro —</option>';
+  renderJogos();
+}
+
+function onA1Change() {
+  const a1=document.getElementById('j-a1').value;
+  const a2=document.getElementById('j-a2');
+  if(!a1){a2.innerHTML='<option value="">— selecione o 1º atleta primeiro —</option>';return;}
+  const jaJogou=allMatches.filter(m=>m.eventoId===jogoEvId&&(m.jogador1Id===a1||m.jogador2Id===a1)).map(m=>m.jogador1Id===a1?m.jogador2Id:m.jogador1Id);
+  const disp=inscritosEv.filter(a=>a.id!==a1&&!jaJogou.includes(a.id));
+  a2.innerHTML='<option value="">— selecione —</option>'+disp.map(a=>`<option value="${a.id}">${a.nome} (${a.classe||'—'})</option>`).join('');
+  if(!disp.length) a2.innerHTML='<option value="">Sem adversários disponíveis</option>';
+}
+
+async function criarJogo() {
+  const a1=document.getElementById('j-a1').value, a2=document.getElementById('j-a2').value;
+  const data=document.getElementById('j-data').value, local=document.getElementById('j-local').value;
+  if(!jogoEvId){showToast('Selecione um evento',true);return;}
+  if(!a1||!a2){showToast('Selecione os dois atletas',true);return;}
+  if(a1===a2){showToast('Atletas devem ser diferentes',true);return;}
+  const dup=allMatches.find(m=>m.eventoId===jogoEvId&&((m.jogador1Id===a1&&m.jogador2Id===a2)||(m.jogador1Id===a2&&m.jogador2Id===a1)));
+  if(dup){showToast('Este jogo já foi marcado!',true);return;}
+  try {
+    await db.collection('jogos').add({jogador1Id:a1,jogador2Id:a2,eventoId:jogoEvId,data:data||null,local:local||null,status:'pendente',criadoEm:firebase.firestore.FieldValue.serverTimestamp()});
+    showToast('✅ Jogo solicitado!');
+    // Enviar e-mail para o adversário
+    const adversario = ga(a2);
+    const ev = ge(jogoEvId);
+    if (adversario?.email) {
+      enviarEmailDesafio(adversario.email, adversario.nome, CUD.nome, ev?.titulo||'Liga Minaçu Tênis');
+    }
+    document.getElementById('j-a1').value=''; document.getElementById('j-a2').innerHTML='<option value="">— selecione o 1º atleta primeiro —</option>';
+    document.getElementById('j-data').value=''; document.getElementById('j-local').value='';
+    await loadAll(); renderJogos();
+  } catch(e){showToast('Erro: '+e.message,true);}
+}
+
+function renderJogos() {
+  const cont=document.getElementById('jg-list'); if(!cont||!jogoEvId) return;
+  let matches=allMatches.filter(m=>m.eventoId===jogoEvId);
+  if(jogoFilter==='pendente') matches=matches.filter(m=>m.status==='pendente');
+  else if(jogoFilter==='confirmado') matches=matches.filter(m=>m.status==='confirmado');
+  if(!matches.length){cont.innerHTML=`<div class="empty" style="padding:24px 0;"><i class="fa-solid fa-calendar-xmark"></i><p>Nenhum jogo ${jogoFilter!=='todos'?jogoFilter:''} neste evento</p></div>`;return;}
+  const sm={pendente:'sp',confirmado:'sc',finalizado:'sf',adiado:'sp'};
+  const sl={pendente:'⏳ Aguardando',confirmado:'✅ Confirmado',finalizado:'🏆 Finalizado',adiado:'⏰ Adiado'};
+  cont.innerHTML=matches.map(m=>{
+    const p1=ga(m.jogador1Id),p2=ga(m.jogador2Id);
+    const isP2=m.jogador2Id===CU.uid, isP1=m.jogador1Id===CU.uid, isAdm=CUD.admin;
+    const needsConfirm=m.status==='pendente'&&isP2;
+    return `<div class="mc">
+      <div class="mplayers">
+        <div class="mp"><div class="mpn" style="${isP1?'color:var(--green);':''}">${p1?.nome||'?'}</div><div class="mpc">${p1?.classe||''}</div></div>
+        <div class="mvs">VS</div>
+        <div class="mp" style="text-align:right;"><div class="mpn" style="${isP2?'color:var(--green);':''}">${p2?.nome||'?'}</div><div class="mpc">${p2?.classe||''}</div></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:8px;">
+        <span class="mstatus ${sm[m.status]}">${sl[m.status]}</span>
+        ${m.data?`<span style="font-size:11px;color:var(--text2);"><i class="fa-regular fa-calendar"></i> ${fmtD(m.data)}</span>`:''}
+        ${m.local?`<span style="font-size:11px;color:var(--text2);"><i class="fa-solid fa-location-dot"></i> ${m.local}</span>`:''}
+      </div>
+      <div class="brow">
+        ${needsConfirm?`<button class="btn btn-g" onclick="confirmJogo('${m.id}')"><i class="fa-solid fa-check"></i> Aceitar</button>`:'' }
+        ${needsConfirm?`<button class="btn btn-r" onclick="cancelJogo('${m.id}')"><i class="fa-solid fa-xmark"></i> Recusar</button>`:''}
+        ${m.status==='pendente'&&isP1?`<span style="font-size:11px;color:var(--text3);">Aguardando ${p2?.nome?.split(' ')[0]||'adversário'}</span>`:''}
+        ${isAdm&&m.status==='pendente'&&!isP1&&!isP2?`<button class="btn btn-g" onclick="confirmJogo('${m.id}')">Confirmar</button><button class="btn btn-r" onclick="cancelJogo('${m.id}')">Cancelar</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterJogos(f,btn) {
+  jogoFilter=f;
+  document.querySelectorAll('#jg-tabs .sn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderJogos();
+}
+async function confirmJogo(id){await db.collection('jogos').doc(id).update({status:'confirmado'});showToast('✅ Confirmado!');await loadAll();renderJogos();}
+async function cancelJogo(id){await db.collection('jogos').doc(id).delete();showToast('Cancelado');await loadAll();renderJogos();}
+
+// ═══════════════════════════════════
+// PLACAR
+// ═══════════════════════════════════
+async function loadPlacar() {
+  const evId=document.getElementById('pl-ev-sel').value;
+  const cont=document.getElementById('pl-list');
+  if(!evId){cont.innerHTML='<div class="empty"><i class="fa-solid fa-table-tennis-paddle-ball"></i><p>Selecione um evento</p></div>';return;}
+  const jogos=allMatches.filter(m=>m.eventoId===evId&&(m.status==='confirmado'||m.status==='finalizado'));
+  if(!jogos.length){cont.innerHTML='<div class="empty"><i class="fa-solid fa-table-tennis-paddle-ball"></i><p>Nenhum jogo confirmado neste evento</p></div>';return;}
+  cont.innerHTML=jogos.map(m=>{
+    const p1=ga(m.jogador1Id),p2=ga(m.jogador2Id);
+    const canScore=(m.status==='confirmado')&&(m.jogador1Id===CU.uid||m.jogador2Id===CU.uid||CUD.admin);
+    const sc=(m.sets||[]).map((s,i)=>`<div class="set-box"><div class="set-label">Set ${i+1}</div><div class="set-score"><span class="${s.p1>s.p2?'sw':'sl2'}">${s.p1}</span><span style="color:var(--text3);font-size:11px;">-</span><span class="${s.p2>s.p1?'sw':'sl2'}">${s.p2}</span></div></div>`).join('');
+    return `<div class="mc">
+      <div class="mplayers">
+        <div class="mp"><div class="mpn" style="${m.vencedor===m.jogador1Id?'color:var(--green);':''}">${p1?.nome||'?'}</div><div class="mpc">${p1?.classe||''}</div></div>
+        <div class="mvs">VS</div>
+        <div class="mp" style="text-align:right;"><div class="mpn" style="${m.vencedor===m.jogador2Id?'color:var(--green);':''}">${p2?.nome||'?'}</div><div class="mpc">${p2?.classe||''}</div></div>
+      </div>
+      ${sc?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${sc}</div>`:''}
+      ${m.vencedor?`<div style="font-family:var(--fc);font-size:12px;color:var(--green);margin-bottom:8px;"><i class="fa-solid fa-trophy"></i> ${ga(m.vencedor)?.nome||'?'}</div>`:''}
+      ${canScore?`<button class="btn btn-g" onclick="openScore('${m.id}')"><i class="fa-solid fa-pen"></i> ${m.sets?'Editar Placar':'Lançar Placar'}</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+function openScore(mid) {
+  const m=allMatches.find(x=>x.id===mid);
+  const p1=ga(m.jogador1Id),p2=ga(m.jogador2Id);
+  document.getElementById('sc-mid').value=mid;
+  document.getElementById('sc-info').textContent=`${p1?.nome||'?'} vs ${p2?.nome||'?'}`;
+  let html='';
+  for(let i=1;i<=3;i++){
+    const s=m.sets&&m.sets[i-1]?m.sets[i-1]:{p1:0,p2:0};
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <label style="font-size:11px;color:var(--text2);width:42px;text-transform:uppercase;letter-spacing:.05em;">Set ${i}</label>
+      <input type="number" class="score-in" id="s${i}p1" value="${s.p1}" min="0" max="7">
+      <span style="font-family:var(--fd);font-size:18px;color:var(--text3);">–</span>
+      <input type="number" class="score-in" id="s${i}p2" value="${s.p2}" min="0" max="7">
+    </div>`;
+  }
+  document.getElementById('sc-sets').innerHTML=html;
+  document.getElementById('modal-score').style.display='flex';
+}
+function closeScore(){document.getElementById('modal-score').style.display='none';}
+
+async function salvarPlacar() {
+  const mid=document.getElementById('sc-mid').value;
+  const m=allMatches.find(x=>x.id===mid);
+  const sets=[];let p1w=0,p2w=0;
+  for(let i=1;i<=3;i++){
+    const s1=parseInt(document.getElementById(`s${i}p1`).value)||0;
+    const s2=parseInt(document.getElementById(`s${i}p2`).value)||0;
+    if(i>1&&s1===0&&s2===0) break;
+    sets.push({p1:s1,p2:s2});
+    if(s1>s2)p1w++;else if(s2>s1)p2w++;
+  }
+  if(!sets.length){showToast('Insira pelo menos um set',true);return;}
+  const vencedor=p1w>p2w?m.jogador1Id:m.jogador2Id;
+  await db.collection('jogos').doc(mid).update({sets,vencedor,status:'finalizado'});
+  closeScore(); showToast('✅ Placar salvo!');
+  await loadAll(); loadPlacar();
+}
+
+// ═══════════════════════════════════
+// CADASTROS — ATLETAS
+// ═══════════════════════════════════
+function renderAtletas() {
+  const cont=document.getElementById('atletas-list'); if(!cont) return;
+  const cnt=document.getElementById('atl-count'); if(cnt) cnt.textContent=`${allAthletes.length} atleta(s) cadastrado(s)`;
+  if(!allAthletes.length){cont.innerHTML='<div class="empty"><i class="fa-solid fa-users"></i><p>Nenhum atleta cadastrado</p></div>';return;}
+  const cc={'1ª Classe':'#FFD700','2ª Classe':'#C0C0C0','3ª Classe':'#CD7F32','4ª Classe':'var(--green)','5ª Classe':'var(--blue)','Principiante':'var(--text2)'};
+  cont.innerHTML=allAthletes.map(a=>{
+    const ini=(a.nome||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const cor=cc[a.classe]||'var(--green)';
+    return `<div style="background:var(--card);border:.5px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+      <div style="width:42px;height:42px;border-radius:50%;background:var(--bg4);border:1.5px solid ${cor};display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:17px;color:${cor};flex-shrink:0;">${ini}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--fc);font-size:15px;font-weight:700;">${a.nome} ${a.admin?'<span class="admin-tag"><i class="fa-solid fa-star"></i></span>':''}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">${a.email} · ${a.sexo==='M'?'M':'F'} · ${a.idade||'?'}a · ${a.cidade||''}</div>
+        <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;">
+          <span class="rbadge rbm">${a.classe||'—'}</span>
+          <span class="rbadge rbm">${a.categoria||'—'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function criarAtleta() {
+  const nome=document.getElementById('a-nome').value.trim();
+  const email=document.getElementById('a-email').value.trim();
+  const pass=document.getElementById('a-pass').value;
+  if(!nome||!email||!pass){showToast('Preencha nome, e-mail e senha',true);return;}
+  try {
+    const sec=firebase.initializeApp(firebaseConfig,'sec-'+Date.now());
+    const sa=sec.auth();
+    const cr=await sa.createUserWithEmailAndPassword(email,pass);
+    const uid=cr.user.uid;
+    await sa.signOut(); sec.delete();
+    await db.collection('atletas').doc(uid).set({
+      nome, email, idade:parseInt(document.getElementById('a-idade').value)||0,
+      sexo:document.getElementById('a-sexo').value,
+      classe:document.getElementById('a-classe').value,
+      categoria:document.getElementById('a-cat').value,
+      cidade:document.getElementById('a-cidade').value,
+      whatsapp:document.getElementById('a-wpp').value,
+      admin:document.getElementById('a-admin').checked,
+      criadoEm:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toggleForm('form-atleta');
+    showToast('✅ Atleta cadastrado!');
+    await loadAll(); renderAtletas();
+  } catch(e){showToast('Erro: '+e.message,true);}
+}
+
+// ═══════════════════════════════════
+// CADASTROS — EVENTOS
+// ═══════════════════════════════════
+function renderEventos() {
+  const cont=document.getElementById('eventos-list'); if(!cont) return;
+  const cnt=document.getElementById('ev-count'); if(cnt) cnt.textContent=`${allEvents.length} evento(s) cadastrado(s)`;
+  if(!allEvents.length){cont.innerHTML='<div class="empty"><i class="fa-solid fa-trophy"></i><p>Nenhum evento criado</p></div>';return;}
+  cont.innerHTML=allEvents.map(e=>{
+    const jogosEv=allMatches.filter(m=>m.eventoId===e.id&&m.status==='finalizado').length;
+    return `<div style="background:var(--card);border:.5px solid ${e.ativo?'var(--green)':'var(--border)'};border-radius:var(--r);overflow:hidden;margin-bottom:12px;">
+      <div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div>
+          <div style="font-family:var(--fc);font-size:16px;font-weight:800;">${e.titulo}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px;">${fmtD(e.inicio)} – ${fmtD(e.fim)} · ${e.formato||''}</div>
+        </div>
+        ${e.ativo?'<span class="rbadge rbg">● ATIVO</span>':'<span class="rbadge rbm">Encerrado</span>'}
+      </div>
+      <div style="padding:10px 14px;font-size:12px;color:var(--text2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span>${e.ptsVitoria||3}pts/V · ${e.ptsPerdedor||1}pts/D · ${jogosEv} jogos realizados</span>
+        ${!e.ativo&&CUD.admin?`<button class="btn btn-g" style="padding:5px 12px;" onclick="ativarEvento('${e.id}')"><i class="fa-solid fa-bolt"></i> Ativar</button>`:e.ativo?'<span style="font-size:11px;color:var(--green);"><i class="fa-solid fa-circle-check"></i> Em andamento</span>':''}
+      </div>
+      ${e.regras?`<div style="padding:0 14px 10px;font-size:11px;color:var(--text3);">${e.regras}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function criarEvento() {
+  const titulo=document.getElementById('e-titulo').value.trim();
+  const inicio=document.getElementById('e-inicio').value;
+  const fim=document.getElementById('e-fim').value;
+  if(!titulo||!inicio||!fim){showToast('Preencha título e datas',true);return;}
+  const ativo=document.getElementById('e-ativo').checked;
+  if(ativo){
+    const snap=await db.collection('eventos').where('ativo','==',true).get();
+    const b=db.batch(); snap.docs.forEach(d=>b.update(d.ref,{ativo:false})); await b.commit();
+  }
+  await db.collection('eventos').add({
+    titulo, inicio, fim,
+    formato:document.getElementById('e-formato').value,
+    ptsVitoria:parseInt(document.getElementById('e-ptv').value)||3,
+    ptsPerdedor:parseInt(document.getElementById('e-ptd').value)||1,
+    regras:document.getElementById('e-regras').value.trim(),
+    criterios:['pts','vitorias','saldo_sets','saldo_games'],
+    ativo, criadoEm:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  toggleForm('form-evento'); showToast(`✅ Evento "${titulo}" criado!`);
+  await loadAll(); renderEventos();
+}
+
+async function ativarEvento(id) {
+  const snap=await db.collection('eventos').where('ativo','==',true).get();
+  const b=db.batch(); snap.docs.forEach(d=>b.update(d.ref,{ativo:false}));
+  b.update(db.collection('eventos').doc(id),{ativo:true}); await b.commit();
+  showToast('Evento ativado!'); await loadAll(); renderEventos();
+}
+
+// ═══════════════════════════════════
+// CRITÉRIOS DE DESEMPATE
+// ═══════════════════════════════════
+async function loadCriterios() {
+  const evId=document.getElementById('crit-ev-sel').value;
+  const cont=document.getElementById('crit-content');
+  if(!evId){cont.innerHTML='<div class="empty"><i class="fa-solid fa-sliders"></i><p>Selecione um evento</p></div>';return;}
+  const ev=ge(evId);
+  const atual=ev.criterios||['pts','vitorias','saldo_sets','saldo_games'];
+  cont.innerHTML=`
+    <div style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:16px;">
+      <div class="sl">Ordem dos critérios de desempate</div>
+      ${CUD.admin?'<p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Arraste para reordenar. O 1º critério tem maior peso no ranking.</p>':'<p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Critérios definidos pelo administrador para este evento.</p>'}
+      <div id="crit-list" style="display:flex;flex-direction:column;gap:8px;">
+        ${atual.map((c,i)=>{
+          const info=CRITERIOS_DISPONIVEIS.find(x=>x.id===c)||{id:c,label:c};
+          return CUD.admin
+            ? `<div draggable="true" data-crit="${c}" style="display:flex;align-items:center;gap:10px;background:var(--bg4);border:.5px solid var(--border);border-radius:var(--rs);padding:10px 12px;cursor:grab;" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropCrit(event)">
+                <i class="fa-solid fa-grip-lines" style="color:var(--text3);"></i>
+                <span style="font-family:var(--fc);font-size:13px;font-weight:700;min-width:20px;color:var(--green);">${i+1}°</span>
+                <span style="font-size:13px;flex:1;">${info.label}</span>
+                <button onclick="removeCrit('${c}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;"><i class="fa-solid fa-xmark"></i></button>
+              </div>`
+            : `<div style="display:flex;align-items:center;gap:10px;background:var(--bg4);border:.5px solid var(--border);border-radius:var(--rs);padding:10px 12px;">
+                <span style="font-family:var(--fc);font-size:14px;font-weight:700;min-width:24px;color:var(--green);">${i+1}°</span>
+                <span style="font-size:13px;flex:1;">${info.label}</span>
+              </div>`;
+        }).join('')}
+      </div>
+      ${CUD.admin?`
+      <div style="margin-top:12px;">
+        <div class="sl">Adicionar critério</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${CRITERIOS_DISPONIVEIS.filter(c=>!atual.includes(c.id)).map(c=>`
+            <button class="btn btn-gh" style="font-size:11px;padding:5px 10px;" onclick="addCrit('${c.id}','${evId}')">${c.label}</button>`).join('')}
+        </div>
+      </div>
+      <button class="btn btn-g btn-full" style="margin-top:14px;" onclick="salvarCriterios('${evId}')"><i class="fa-solid fa-check"></i> Salvar Critérios</button>`:''}
+    </div>`;
+}
+
+let dragSrc=null;
+function dragStart(e){dragSrc=e.currentTarget;}
+function dragOver(e){e.preventDefault();}
+function dropCrit(e){
+  e.preventDefault();
+  const target=e.currentTarget;
+  if(dragSrc===target) return;
+  const list=document.getElementById('crit-list');
+  const items=[...list.children];
+  const si=items.indexOf(dragSrc), ti=items.indexOf(target);
+  if(si<ti) list.insertBefore(dragSrc,target.nextSibling); else list.insertBefore(dragSrc,target);
+  updateCritNumbers();
+}
+function updateCritNumbers(){
+  [...document.getElementById('crit-list').children].forEach((el,i)=>{
+    const num=el.querySelector('span');if(num) num.textContent=`${i+1}°`;
+  });
+}
+function removeCrit(id){
+  const el=document.querySelector(`#crit-list [data-crit="${id}"]`);
+  if(el) el.remove(); updateCritNumbers();
+}
+function addCrit(id,evId){
+  const info=CRITERIOS_DISPONIVEIS.find(x=>x.id===id);
+  const list=document.getElementById('crit-list');
+  const n=list.children.length+1;
+  const div=document.createElement('div');
+  div.setAttribute('draggable','true'); div.setAttribute('data-crit',id);
+  div.style.cssText='display:flex;align-items:center;gap:10px;background:var(--bg4);border:.5px solid var(--border);border-radius:var(--rs);padding:10px 12px;cursor:grab;';
+  div.innerHTML=`<i class="fa-solid fa-grip-lines" style="color:var(--text3);"></i><span style="font-family:var(--fc);font-size:13px;font-weight:700;min-width:20px;color:var(--green);">${n}°</span><span style="font-size:13px;flex:1;">${info?.label||id}</span><button onclick="this.parentElement.remove();updateCritNumbers();" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;"><i class="fa-solid fa-xmark"></i></button>`;
+  div.addEventListener('dragstart',dragStart); div.addEventListener('dragover',dragOver); div.addEventListener('drop',dropCrit);
+  list.appendChild(div);
+}
+async function salvarCriterios(evId){
+  const items=[...document.getElementById('crit-list').children];
+  const crits=items.map(el=>el.getAttribute('data-crit'));
+  await db.collection('eventos').doc(evId).update({criterios:crits});
+  showToast('✅ Critérios salvos!'); await loadAll();
+}
+</script>
+<!-- MODAL ALERTA DE DESAFIOS -->
+<div id="modal-desafios" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--card);border:.5px solid var(--border2);border-radius:20px;width:100%;max-width:420px;overflow:hidden;animation:slideUp .35s ease;box-shadow:0 0 60px rgba(0,200,83,0.12);">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,rgba(0,200,83,0.15),rgba(0,200,83,0.05));padding:20px 20px 16px;border-bottom:.5px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <div style="width:38px;height:38px;background:var(--green-g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">🎾</div>
+        <div>
+          <div style="font-family:var(--fd);font-size:22px;letter-spacing:1px;color:var(--text);">DESAFIO RECEBIDO!</div>
+          <div style="font-size:12px;color:var(--text2);">Você tem partidas aguardando confirmação</div>
+        </div>
+      </div>
+    </div>
+    <!-- Lista de desafios -->
+    <div id="desafios-lista" style="max-height:320px;overflow-y:auto;"></div>
+    <!-- Footer -->
+    <div style="padding:14px 20px;border-top:.5px solid var(--border);display:flex;justify-content:flex-end;">
+      <button class="btn btn-gh" onclick="fecharDesafios()" style="font-size:12px;">Ver depois</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
