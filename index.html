@@ -190,6 +190,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
 .zona-top{background:rgba(0,200,83,.15);color:var(--green);border:.5px solid var(--green-d)}
 .zona-bot{background:rgba(255,61,61,.12);color:var(--red);border:.5px solid rgba(255,61,61,.3)}
 .zona-mid{background:var(--bg4);color:var(--text2);border:.5px solid var(--border)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -202,16 +203,44 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
       <h1>LIGA MINAÇU</h1>
       <p>Tênis · Sistema Oficial</p>
     </div>
-    <div class="lerr" id="lerr"></div>
-    <div class="fg"><label class="fl">E-mail</label><input type="email" class="fi" id="lemail" placeholder="seu@email.com" autocomplete="email"></div>
-    <div class="fg"><label class="fl">Senha</label>
-      <div class="fi-pw">
-        <input type="password" class="fi" id="lpass" placeholder="••••••••" autocomplete="current-password">
-        <button class="eye" onclick="togglePw('lpass',this)"><i class="fa-regular fa-eye" id="lpass-eye"></i></button>
+
+    <!-- FORM LOGIN -->
+    <div id="form-login">
+      <div id="lerr" style="background:rgba(255,61,61,.1);border:.5px solid rgba(255,61,61,.3);border-radius:6px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:none;"></div>
+      <div class="fg"><label class="fl">E-mail</label><input type="email" class="fi" id="lemail" placeholder="seu@email.com"></div>
+      <div class="fg"><label class="fl">Senha</label>
+        <div class="fi-pw">
+          <input type="password" class="fi" id="lpass" placeholder="••••••••">
+          <button class="eye" onclick="togglePw('lpass',this)"><i class="fa-regular fa-eye"></i></button>
+        </div>
       </div>
+      <button class="btn-p" id="lbtn" type="button" onclick="doLogin()">Entrar</button>
+      <p style="text-align:center;font-size:12px;color:var(--text2);margin-top:16px;">Não tem conta? <a href="#" onclick="abrirCadastro(event)" style="color:var(--green);text-decoration:none;font-weight:700;">Cadastre-se</a></p>
     </div>
-    <button class="btn-p" id="lbtn" onclick="doLogin()">Entrar</button>
-    <p style="text-align:center;font-size:11px;color:var(--text3);margin-top:14px;">Acesso exclusivo para atletas cadastrados</p>
+
+    <!-- FORM PRÉ-CADASTRO (simples) -->
+    <div id="form-cadastro" style="display:none;">
+      <div id="lerr-cad" style="background:rgba(255,61,61,.1);border:.5px solid rgba(255,61,61,.3);border-radius:6px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:none;"></div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Preencha os dados para criar sua conta:</p>
+      <div class="fg"><label class="fl">Nome completo</label><input type="text" class="fi" id="reg-nome" placeholder="Seu nome completo"></div>
+      <div class="fg"><label class="fl">Celular / WhatsApp</label><input type="tel" class="fi" id="reg-cel" placeholder="(62) 99999-9999"></div>
+      <div class="fg"><label class="fl">E-mail</label><input type="email" class="fi" id="reg-email" placeholder="seu@email.com"></div>
+      <div class="fg"><label class="fl">Senha</label>
+        <div class="fi-pw">
+          <input type="password" class="fi" id="reg-pass" placeholder="Mín. 6 caracteres">
+          <button class="eye" type="button" onclick="togglePw('reg-pass',this)"><i class="fa-regular fa-eye"></i></button>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Confirmar Senha</label>
+        <div class="fi-pw">
+          <input type="password" class="fi" id="reg-pass2" placeholder="Repita a senha">
+          <button class="eye" type="button" onclick="togglePw('reg-pass2',this)"><i class="fa-regular fa-eye"></i></button>
+        </div>
+      </div>
+      <button class="btn-p" id="reg-btn" type="button" onclick="doRegistro()">Criar conta</button>
+      <p style="text-align:center;font-size:12px;color:var(--text2);margin-top:16px;">Já tem conta? <a href="#" onclick="fecharCadastro(event)" style="color:var(--green);text-decoration:none;font-weight:700;">Entrar</a></p>
+    </div>
+
     <p style="text-align:center;font-size:10px;color:var(--text3);margin-top:20px;letter-spacing:0.1em;opacity:0.5;">by Jaime Pessoa</p>
   </div>
 </div>
@@ -458,7 +487,6 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
     <button class="btn btn-gh btn-full" style="margin-top:8px;" onclick="closeScore()">Cancelar</button>
   </div>
 </div>
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
 <script>
 // ═══════════════════════════════════
@@ -475,6 +503,14 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let CU = null, CUD = null;
+let allAthletes = [], allMatches = [], allEvents = [];
+let jogoEvId = null, jogoFilter = 'pendente';
+let inscritosEv = [];
 
 // ═══════════════════════════════════
 // EMAILJS CONFIG
@@ -578,11 +614,6 @@ async function recusarDesafio(id) {
 }
 
 
-let CU = null, CUD = null;
-let allAthletes = [], allMatches = [], allEvents = [];
-let jogoEvId = null, jogoFilter = 'pendente';
-let inscritosEv = [];
-
 // Critérios de desempate disponíveis (baseado na tabela CBT/referência)
 const CRITERIOS_DISPONIVEIS = [
   {id:'pts',label:'Pontuação (Pts)'},
@@ -615,15 +646,127 @@ auth.onAuthStateChanged(async u => {
   }
 });
 
+function abrirCadastro(e) {
+  e.preventDefault();
+  document.getElementById('form-login').style.display = 'none';
+  document.getElementById('form-cadastro').style.display = 'block';
+}
+function fecharCadastro(e) {
+  e.preventDefault();
+  document.getElementById('form-cadastro').style.display = 'none';
+  document.getElementById('form-login').style.display = 'block';
+}
+function showLoginTab(tab) {
+  if (tab === 'cadastro') {
+    document.getElementById('form-login').style.display = 'none';
+    document.getElementById('form-cadastro').style.display = 'block';
+  } else {
+    document.getElementById('form-cadastro').style.display = 'none';
+    document.getElementById('form-login').style.display = 'block';
+  }
+}
+
+async function doRegistro() {
+  const nome  = document.getElementById('reg-nome').value.trim();
+  const cel   = document.getElementById('reg-cel').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  const pass2 = document.getElementById('reg-pass2').value;
+  const err   = document.getElementById('lerr-cad');
+
+  const showErr = (msg) => { err.textContent = msg; err.style.display = 'block'; };
+  err.style.display = 'none';
+
+  if (!nome)            { showErr('⚠️ Informe seu nome completo.'); return; }
+  if (!cel)             { showErr('⚠️ Informe seu celular/WhatsApp.'); return; }
+  if (!email)           { showErr('⚠️ Informe seu e-mail.'); return; }
+  if (pass.length < 6)  { showErr('⚠️ Senha deve ter no mínimo 6 caracteres.'); return; }
+  if (pass !== pass2)   { showErr('⚠️ As senhas não coincidem. Verifique.'); return; }
+
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true; btn.textContent = 'Criando conta...';
+
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await db.collection('atletas').doc(cred.user.uid).set({
+      nome, email, whatsapp: cel,
+      idade: 0, sexo: 'M',
+      classe: 'Principiante', categoria: 'Adulto',
+      cidade: 'Minaçu - GO', admin: false,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // Sucesso — volta para login
+    fecharCadastro({preventDefault:()=>{}});
+    const lerr = document.getElementById('lerr');
+    lerr.style.cssText = 'background:rgba(0,200,83,0.12);border:.5px solid rgba(0,200,83,0.4);border-radius:6px;padding:10px 14px;font-size:13px;color:#00C853;margin-bottom:14px;display:block;';
+    lerr.textContent = '✅ Conta criada com sucesso! Faça seu login.';
+    document.getElementById('lemail').value = email;
+    document.getElementById('lpass').value = '';
+    document.getElementById('lpass').focus();
+  } catch(e) {
+    const msgs = {
+      'auth/email-already-in-use': '⚠️ Este e-mail já está cadastrado. Faça login.',
+      'auth/invalid-email':        '⚠️ E-mail inválido. Verifique o formato.',
+      'auth/weak-password':        '⚠️ Senha muito fraca. Use no mínimo 6 caracteres.',
+    };
+    showErr(msgs[e.code] || '⚠️ Erro ao criar conta: ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = 'Criar conta';
+}
+
 async function doLogin() {
   const email = document.getElementById('lemail').value.trim();
-  const pass = document.getElementById('lpass').value;
-  const btn = document.getElementById('lbtn');
-  const err = document.getElementById('lerr');
+  const pass  = document.getElementById('lpass').value;
+  const btn   = document.getElementById('lbtn');
+  const err   = document.getElementById('lerr');
+
   err.style.display = 'none';
+  if (!email || !pass) {
+    err.style.cssText = 'background:rgba(255,61,61,.1);border:.5px solid rgba(255,61,61,.3);border-radius:6px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:block;';
+    err.textContent = '⚠️ Preencha e-mail e senha.';
+    return;
+  }
+
   btn.disabled = true; btn.textContent = 'Entrando...';
-  try { await auth.signInWithEmailAndPassword(email, pass); }
-  catch(e) { err.textContent = 'E-mail ou senha inválidos.'; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Entrar'; }
+
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged cuida do resto
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Entrar';
+    err.style.cssText = 'background:rgba(255,61,61,.1);border:.5px solid rgba(255,61,61,.3);border-radius:6px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:block;';
+
+    const naoEncontrado = [
+      'auth/user-not-found',
+      'auth/invalid-credential',
+      'auth/invalid-login-credentials',
+      'auth/INVALID_LOGIN_CREDENTIALS'
+    ];
+
+    if (naoEncontrado.includes(e.code)) {
+      err.style.cssText = 'background:rgba(255,214,0,.1);border:.5px solid rgba(255,214,0,.4);border-radius:6px;padding:10px 14px;font-size:13px;color:#FFD600;margin-bottom:14px;display:block;';
+      err.textContent = '⚠️ Atleta não cadastrado. Deseja se cadastrar?';
+      // Botão de ação
+      const actDiv = document.createElement('div');
+      actDiv.style.cssText = 'margin-top:10px;display:flex;gap:8px;';
+      actDiv.innerHTML = `
+        <button type="button" onclick="abrirCadastroComEmail('${email}')" style="flex:1;padding:8px;background:var(--green);border:none;border-radius:6px;font-family:var(--fc);font-size:12px;font-weight:700;cursor:pointer;color:#000;">Sim, cadastrar</button>
+        <button type="button" onclick="this.parentElement.remove()" style="padding:8px 12px;background:transparent;border:.5px solid var(--border2);border-radius:6px;font-family:var(--fc);font-size:12px;cursor:pointer;color:var(--text2);">Não</button>`;
+      err.appendChild(actDiv);
+    } else if (e.code === 'auth/wrong-password') {
+      err.textContent = '⚠️ Senha incorreta. Tente novamente.';
+    } else if (e.code === 'auth/too-many-requests') {
+      err.textContent = '⚠️ Muitas tentativas. Aguarde alguns minutos.';
+    } else {
+      err.textContent = '⚠️ Erro ao entrar: ' + e.message;
+    }
+  }
+}
+
+function abrirCadastroComEmail(email) {
+  abrirCadastro({preventDefault:()=>{}});
+  document.getElementById('reg-email').value = email;
+  document.getElementById('reg-nome').focus();
 }
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('lpass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
@@ -700,6 +843,8 @@ async function initApp() {
   await loadAll();
   verificarDesafiosPendentes();
 }
+
+async function loadAll() {
   const [athSnap, evSnap, mSnap] = await Promise.all([
     db.collection('atletas').get(),
     db.collection('eventos').orderBy('criadoEm','desc').get(),
